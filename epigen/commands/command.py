@@ -4,16 +4,17 @@ import sys
 from epigen import commands
 
 class ComplexCLI( click.MultiCommand ):
-    def __init__(self, cmd_subdir, *args, **kwargs):
-        self.cmd_subdir = cmd_subdir
-        self.cmd_dir = os.path.join( os.path.abspath( os.path.dirname( commands.__file__ ) ), cmd_subdir )
+    def __init__(self, cmd_subdirs, *args, **kwargs):
+        self.cmd_subdirs = cmd_subdirs
         super( ComplexCLI, self ).__init__( *args, **kwargs )
 
     def list_commands(self, ctx):
         rv = []
-        for filename in os.listdir( self.cmd_dir ):
-            if filename.startswith( "cmd_" ) and filename.endswith( ".py" ):
-                rv.append( self.cmd_subdir + "-" + filename[ 4:-3 ] )
+        for cmd_subdir in self.cmd_subdirs:
+            cmd_dir = os.path.join( os.path.abspath( os.path.dirname( commands.__file__ ) ), cmd_subdir )
+            for filename in os.listdir( cmd_dir ):
+                if filename.startswith( "cmd_" ) and filename.endswith( ".py" ):
+                    rv.append( cmd_subdir + "-" + filename[ 4:-3 ] )
 
         rv.sort( )
 
@@ -24,8 +25,8 @@ class ComplexCLI( click.MultiCommand ):
             if sys.version_info[ 0 ] == 2:
                 name = name.encode( "ascii", "replace" )
 
-            name = name.replace( self.cmd_subdir + "-", "" )
-            mod_name = "epigen.commands.{0}.cmd_{1}".format( self.cmd_subdir, name )
+            cmd_dir, sep, cmd_name = name.partition( "-" )
+            mod_name = "epigen.commands.{0}.cmd_{1}".format( cmd_dir, cmd_name )
             mod = __import__( mod_name, None, None, [ "epigen" ] )
         except ImportError:
             return
