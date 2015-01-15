@@ -1,7 +1,8 @@
 import click
+from epigen.commands.command import CommandWithHelp
 from epigen.plink import generate
 
-@click.command( 'pair', short_help="Generates a plink file by conditioning on the phenotype and generating genotypes, useful for case/control." )
+@click.command( 'pair', cls = CommandWithHelp, short_help="Generates a plink file by conditioning on the phenotype and generating genotypes, useful for case/control." )
 @click.option( '--model', nargs=9, type=generate.probability, help='Space-separated list of floating point numbers that represents the penetrance matrix, specified row-wise from left to right.', required = True )
 @click.option( '--maf', nargs=2, type=generate.probability, help='Minor allele frequency of the two snps.', required = True )
 @click.option( '--sample-maf/--no-sample-maf', help='The --maf is treated as a range and maf is sampled uniformly in this range.', default = False )

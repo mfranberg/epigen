@@ -28,7 +28,7 @@ class ComplexCLI( click.MultiCommand ):
 
         return mod.epigen
 
-@click.command(cls = ComplexCLI)
+@click.command(no_args_is_help = True, cls = ComplexCLI)
 def epigen():
     """Generate plink or phenotype data using an epistatic model."""
 
