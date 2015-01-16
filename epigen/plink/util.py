@@ -1,7 +1,7 @@
 import random
 
 ##
-# Given a list of loci nmaes this function finds
+# Given a list of variant names this function finds
 # the corresponding genotypes and returns them.
 #
 def find_rows(plink_file, loci):
@@ -12,6 +12,18 @@ def find_rows(plink_file, loci):
             rows.append( list( row ) )
 
     return rows
+
+##
+# Returns the index of the given variant names.
+#
+# @param loci List of loci.
+# @param names A list of variant names.
+#
+# @return The indices of the given locus.
+#
+def find_index(loci, names):
+    loci_name_set = set( names )
+    return [ i for i, x in enumerate( loci ) if x in loci_name_set ]
 
 ##
 # Randomly selects n loci from the loci list.

@@ -251,3 +251,38 @@ def generate_phenotype_additive(variants, beta0, beta):
     p = 1/(1 + exp(-score))
     
     return int( random.random( ) <= p )
+
+##
+# Generates a phenotype for the given snp pair and penetrance
+# matrix. 
+#
+# @param snp Genotype of variant.
+# @param env Environmental factor.
+# @param model Mean for each genotype and environmental level.
+# @param std Standard deviation of phenotype.
+#
+# @return A continuous phenotype, or "NA" if genotype was missing.
+#
+def generate_env_phenotype(snp, env, model, std):
+    if snp != 3:
+        return random.normalvariate( model[ env * 3 + snp ], std )
+    else:
+        return "NA"
+
+##
+# Generates an environment variable
+# from the level frequencies.
+#
+# @param level frequencies that sum to one.
+#
+# @return The generated level.
+#
+def generate_environment(env):
+    u = random.random( )
+    cumsum = 0.0
+    for i, e in enumerate( env ):
+        cumsum += e
+        if u <= cumsum:
+            return i
+
+    raise Exception( "Environmental frequencies does not sum to 1." )
