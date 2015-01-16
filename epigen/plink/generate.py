@@ -2,7 +2,7 @@ import numpy as np
 import argparse
 import random
 import os
-from math import sqrt
+from math import sqrt, exp
 
 from plinkio import plinkfile
 
@@ -231,3 +231,23 @@ def generate_phenotype_cont(snp1, snp2, model, sd):
         return random.normalvariate( model[ 3 * snp1 + snp2 ], sd )
     else:
         return None
+
+##
+# Generates a phenotype for the given snp pair and penetrance
+# matrix. 
+#
+# @param snp1 Genotype of first snp
+# @param snp2 Genotype of second snp
+# @param model Penetrance matrix as a length 9 list
+#
+# @return 1 or 0 representing case control if no snp was missing, None
+#         otherwise.
+#
+def generate_phenotype_additive(variants, beta0, beta):
+    if 3 in variants:
+        return None
+
+    score = beta0 + sum( [ b * v for b, v in zip( beta, variants ) ] )
+    p = 1/(1 + exp(-score))
+    
+    return int( random.random( ) <= p )
