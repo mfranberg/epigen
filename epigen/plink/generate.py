@@ -184,3 +184,33 @@ def write_data(fixed_params, models, output_prefix):
         model_index += 1
   
     output_files.close( )
+    
+##
+# Generates two distinct loci.
+#
+# @param loci List of locus.
+#
+# @return A list of two loci.
+#
+def sample_two_loci(loci):
+    loci_index = list( range( len( loci ) ) )
+    random.shuffle( loci_index )
+
+    return loci_index[:2]
+
+##
+# Generates a phenotype for the given snp pair and penetrance
+# matrix. 
+#
+# @param snp1 Genotype of first snp
+# @param snp2 Genotype of second snp
+# @param model Penetrance matrix as a length 9 list
+#
+# @return 1 or 0 representing case control if no snp was missing, None
+#         otherwise.
+#
+def generate_phenotype(snp1, snp2, model):
+    if snp1 != 3 and snp2 != 3:
+        return int( random.random( ) <= model[ 3 * snp1 + snp2 ] )
+    else:
+        return None
