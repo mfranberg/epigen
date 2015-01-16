@@ -1,5 +1,3 @@
-#!/sw/comp/python/2.7.4/bin/python
-
 import os
 import sys
 import click
