@@ -214,3 +214,20 @@ def generate_phenotype(snp1, snp2, model):
         return int( random.random( ) <= model[ 3 * snp1 + snp2 ] )
     else:
         return None
+
+##
+# Generates a normal phenotype for the given snp pair and mean
+# matrix. 
+#
+# @param snp1 Genotype of first snp
+# @param snp2 Genotype of second snp
+# @param model Mean matrix as a length 9 list
+# @param sd Common standard deviation
+#
+# @return Normal variable if not missing, None otherwise.
+#
+def generate_phenotype_cont(snp1, snp2, model, sd):
+    if snp1 != 3 and snp2 != 3:
+        return random.normalvariate( model[ 3 * snp1 + snp2 ], sd )
+    else:
+        return None
