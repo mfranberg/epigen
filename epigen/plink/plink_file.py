@@ -13,8 +13,8 @@ class PlinkFile:
         for i in range( ncases + ncontrols ):
             phenotype = int( i < ncases + 1 )
 
-            iid = "iid{0}".format( i )
-            fid = "fid{0}".format( i )
+            iid = "fid{0}".format( i )
+            fid = "iid{0}".format( i )
             affection = int( i < ncases + 1 )
 
             sample = plinkfile.Sample( iid, fid, "0", "0", 1, affection )

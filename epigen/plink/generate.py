@@ -6,7 +6,9 @@ from math import sqrt, exp
 
 from plinkio import plinkfile
 
+
 from .output import OutputFiles
+from .plink_file import PlinkFile
 
 ##
 # The parameters that does not changed between models.
@@ -286,3 +288,21 @@ def generate_environment(env):
             return i
 
     raise Exception( "Environmental frequencies does not sum to 1." )
+
+
+##
+# Generate a set of single variants.
+#
+def write_single(nvariants, nsamples, output_prefix, maf = None):
+    pf = PlinkFile( output_prefix, nsamples, 0 )
+
+    generate_maf = lambda: np.random.beta( 0.8, 0.8 )
+    if maf:
+        geneate_maf = lambda: maf[ 0 ] + ( maf[ 1 ] - maf[ 0 ] ) * random.random( )
+    
+    for i in range( nvariants ):
+        m = generate_maf( )
+        genotypes = np.random.binomial( 2, m, nsamples )
+        pf.write( i, genotypes )
+
+    pf.close( )
