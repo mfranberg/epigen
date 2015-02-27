@@ -2,6 +2,7 @@ import click
 from plinkio import plinkfile
 
 from epigen.plink import generate
+from epigen.util import probability
 from epigen.commands.command import CommandWithHelp
 
 ##
@@ -66,7 +67,7 @@ def write_phenotypes(sample_list, snp1_row, snp2_row, model, sd, output_file, pl
     return num_samples
 
 @click.command( 'cont', cls = CommandWithHelp, short_help='Generates binary phenotypes for given plink data.' )
-@click.option( '--model', nargs=9, type=generate.probability, help='Space-separated list of floating point numbers that represents the mean for each genotype, specified row-wise from left to right.' )
+@click.option( '--model', nargs=9, type=probability.probability, help='Space-separated list of floating point numbers that represents the mean for each genotype, specified row-wise from left to right.' )
 @click.option( '--sd', metavar='sd', type=float, help='Common standard deviation', required = True )
 @click.option( '--pair', nargs=2, type=str, help='Name of two SNPs for which the phenotype should be based on (otherwise random).', default = None )
 @click.option( "--plink-format/--no-plink-format", help="Use plink format for the phenotype file.", default = False )

@@ -5,20 +5,22 @@ class PlinkFile:
     # Constructor.
     #
     # @param path Prefix to the plink file.
-    # @param ncases Number of cases.
-    # @param ncontrols Number of controls.
+    # @param phenotype Phenotypes of all individuals.
+    # @param is_binary Determines whether phenotype should be interpreted
+    #                  as binary or not.
     #
-    def __init__(self, path, ncases, ncontrols):
+    def __init__(self, path, phenotype, is_binary = True):
         samples = [ ]
-        for i in range( ncases + ncontrols ):
-            phenotype = int( i < ncases + 1 )
-
+        for i, p in enumerate( phenotype ):
             iid = "fid{0}".format( i )
             fid = "iid{0}".format( i )
-            affection = int( i < ncases + 1 )
 
-            sample = plinkfile.Sample( iid, fid, "0", "0", 1, affection )
-            samples.append( sample )
+            if is_binary:
+                sample = plinkfile.Sample( iid, fid, "0", "0", 1, p )
+                samples.append( sample )
+            else:
+                sample = plinkfile.Sample( iid, fid, "0", "0", 1, 3, p )
+                samples.append( sample )
 
         self.plink_file = plinkfile.create( path, samples )
         self.index = 1

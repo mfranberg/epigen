@@ -2,7 +2,8 @@ import click
 from functools import partial
 
 from epigen.commands.command import CommandWithHelp
-from epigen.plink import generate
+from epigen.plink import generate, genmodels
+from epigen.util import probability
 from epigen.interaction.generator import InteractionGenerator, mat_or
 from epigen.interaction.util import heritability
 
@@ -42,9 +43,9 @@ def find_penetrance(desired_heritability, base_risk, maf, model):
     return penetrance
 
 @click.command( 'all', cls = CommandWithHelp, short_help='Generates all possible interaction pairs.' )
-@click.option( '--maf', nargs=2, type=generate.probability, help='Minor allele frequency of the two snps.', default = [0.3, 0.3] )
+@click.option( '--maf', nargs=2, type=probability.probability, help='Minor allele frequency of the two snps.', default = [0.3, 0.3] )
 @click.option( '--sample-size', nargs=2, type=int, help='Number of cases and controls.', default = [ 2000, 2000 ] )
-@click.option( '--ld', type=generate.probability, help='Strength of LD (ignores second maf).', default = None )
+@click.option( '--ld', type=probability.probability, help='Strength of LD (ignores second maf).', default = None )
 @click.option( '--num-pairs', type=int, help='Number of pairs to generate from each model.', default = 100 )
 @click.option( '--heritability', type=float, help='Approximate heritability of each model.', default = 0.02 )
 @click.option( '--base-risk', type=float, help='The base risk of the neutral alleles.', default = 0.5 )
@@ -57,7 +58,7 @@ def epigen(maf, sample_size, ld, num_pairs, heritability, base_risk, out):
     partial_find_penetrance = partial( find_penetrance, heritability, base_risk, maf )
     interaction_penetrances = list( map( partial_find_penetrance, interactions ) )
 
-    models = [ ( num_pairs, p, 1 ) for p in interaction_penetrances ]
+    models = [ ( num_pairs, 1, genmodels.BinaryParams( p ) ) for p in interaction_penetrances ]
 
-    fixed_params = generate.FixedParams( maf, ld, sample_size[ 0 ], sample_size[ 1 ] )
-    generate.write_data( fixed_params, models, out )
+    fixed_params = genmodels.FixedParams( maf, ld, sample_size )
+    generate.write_data( genmodels.BinaryModel( ), fixed_params, models, out )
