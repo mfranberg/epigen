@@ -88,12 +88,12 @@ def write_phenotypes(sample_list, snp1_row, snp2_row, model, output_file, plink_
 
 
 @click.command( 'binary', cls = CommandWithHelp, short_help='Generates binary phenotypes for given plink data.' )
-@click.option( '--model', nargs=9, type=probability.probability, help='Space-separated list of floating point numbers that represents the penetrance matrix, specified row-wise from left to right.' )
+@click.option( '--penetrance', nargs=9, type=probability.probability, help='Space-separated list of floating point numbers that represents the penetrance matrix, specified row-wise from left to right.' )
 @click.option( '--pair', nargs=2, type=str, help='Name of two SNPs for which the phenotype should be based on (otherwise random).', default = None )
 @click.option( "--plink-format/--no-plink-format", help="Use plink format for the phenotype file.", default = False )
 @click.option( '--out', type=click.Path(writable = True), help='Output phenotype file.', required = True )
 @click.argument( 'plink_file', type=click.Path( ) )
-def epigen(plink_file, model, pair, plink_format, out):
+def epigen(plink_file, penetrance, pair, plink_format, out):
     input_file = plinkfile.open( plink_file ) 
     snp1_index, snp2_index = generate.sample_two_loci( input_file.get_loci( ) )
     if pair:
@@ -102,5 +102,5 @@ def epigen(plink_file, model, pair, plink_format, out):
     snp1_row, snp2_row = find_genotypes( input_file, snp1_index, snp2_index )
 
     with open( out, "w" ) as output_file:
-        number_of_cases, number_of_controls = write_phenotypes( input_file.get_samples( ), snp1_row, snp2_row, model, output_file, plink_format = plink_format )
+        number_of_cases, number_of_controls = write_phenotypes( input_file.get_samples( ), snp1_row, snp2_row, penetrance, output_file, plink_format = plink_format )
         print "Wrote {0} cases and {1} controls".format( number_of_cases, number_of_controls ) 
