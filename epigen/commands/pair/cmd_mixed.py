@@ -25,7 +25,7 @@ def parse_models(model_file):
             is_case = bool( int( columns[ 1 ], 2 ) )
             params = list( map( float, columns[ 2: ] ) )
 
-            yield (num_pairs, is_case, genmodels.BinaryParams( params ) )
+            yield (num_pairs, is_case, genmodels.BinomialParams( params ) )
 
         except ValueError:
             print( "Could not parse value in model file." )
@@ -40,4 +40,4 @@ def parse_models(model_file):
 def epigen(model_file, maf, sample_size, ld, out):
     fixed_params = genmodels.FixedParams( maf, ld, sample_size )
     models = parse_models( model_file )
-    generate.write_data( genmodels.BinaryModel( ), fixed_params, models, out )
+    generate.write_general_data( genmodels.BinomialModel( ), fixed_params, models, out )
