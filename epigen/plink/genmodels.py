@@ -181,13 +181,23 @@ def get_links():
         "exp" : log,
         "logc" : lambda x: 1 - exp( x ),
         "odds" : lambda x: x/(1+x),
-        "logodds" : lambda x: 1/(1+exp(-x)) }
+        "logodds" : lambda x: 1/(1+exp(-x)),
+        "default" : None }
+
+def get_default_links():
+    return {
+        "normal" : "identity",
+        "binomial" : "logodds"
+    }
 
 def get_link_names():
     return get_links( ).keys( )
 
-def get_link(link_str):
-    return get_links( ).get( link_str, None )
+def get_link(model, link_str):
+    if link_str == "default":
+        return get_links( ).get( get_default_links( ).get( model ) )
+    else:
+        return get_links( ).get( link_str, None )
 
 def get_mean_values(beta, lf):
     P = [ [ 1, 0, 0, 0, 0, 0, 0, 0, 0 ],

@@ -12,7 +12,7 @@ from epigen.commands.command import CommandWithHelp
 @click.option( '--beta', nargs=2, help='The mean and variance of the beta variables (taken from a normal).', required = True )
 @click.option( '--num-loci', type=int, help='The number of loci that is involved in the phenotype.', default = 10 )
 @click.option( '--model', type=click.Choice( genmodels.get_models( ) ), help="The model to use.", required = True )
-@click.option( '--link', type=click.Choice( genmodels.get_links( ).keys( ) ), help="The link function to use.", required = True )
+@click.option( '--link', type=click.Choice( genmodels.get_links( ).keys( ) ), help="The link function to use.", default = "default" )
 @click.option( '--dispersion', type=float, help="The dispersion parameter to use.", default=1.0 )
 @click.option( '--out', type = click.Path(writable=True), help='Output phenotype file.', required = True )
 def epigen(plink_file, beta0, beta, num_loci, model, link, dispersion, out):
@@ -25,6 +25,6 @@ def epigen(plink_file, beta0, beta, num_loci, model, link, dispersion, out):
     if not beta0:
         beta0 = find_beta0( rows, gen_beta )
 
-    mu_map = genmodels.AdditiveMuMap( beta0, gen_beta, genmodels.get_link( link ) )
+    mu_map = genmodels.AdditiveMuMap( beta0, gen_beta, genmodels.get_link( model, link ) )
     pheno_generator = genmodels.get_pheno_generator( model, mu_map, dispersion )
     generate.write_general_phenotype( input_file.get_samples( ), rows, pheno_generator, out, plink_format )
