@@ -58,7 +58,7 @@ def epigen(maf, sample_size, ld, num_pairs, heritability, base_risk, out):
     partial_find_penetrance = partial( find_penetrance, heritability, base_risk, maf )
     interaction_penetrances = list( map( partial_find_penetrance, interactions ) )
 
-    models = [ ( num_pairs, 1, genmodels.BinaryParams( p ) ) for p in interaction_penetrances ]
+    models = [ ( num_pairs, 1, genmodels.BinomialParams( p ) ) for p in interaction_penetrances ]
 
     fixed_params = genmodels.FixedParams( maf, ld, sample_size )
-    generate.write_data( genmodels.BinaryModel( ), fixed_params, models, out )
+    generate.write_general_data( genmodels.BinomialModel( ), fixed_params, models, out )

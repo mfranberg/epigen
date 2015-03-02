@@ -19,7 +19,7 @@ def random_penetrance(H2, p_d, pmin = 0.1, pmax = 0.9):
 @click.option( '--base-risk', type=float, help='The base risk of the neutral alleles.', default = 0.5 )
 @click.option( '--out', type = click.Path( writable = True ), help='Output plink file.', required = True )
 def epigen(maf, sample_size, ld, num_pairs, num_models, heritability, base_risk, out):
-    models = [ ( num_pairs, 1, genmodels.BinaryParams( random_penetrance( heritability, base_risk ) ) ) for i in range( num_models ) ]
+    models = [ ( num_pairs, 1, genmodels.BinomialParams( random_penetrance( heritability, base_risk ) ) ) for i in range( num_models ) ]
 
     fixed_params = genmodels.FixedParams( maf, ld, sample_size )
-    generate.write_data( genmodels.BinaryModel( ), fixed_params, models, out )
+    generate.write_general_data( genmodels.BinomialModel( ), fixed_params, models, out )
