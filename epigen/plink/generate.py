@@ -1,11 +1,11 @@
+import random
 import os
 from math import exp
-
-import numpy as np
 
 from .output import OutputFiles
 from .plink_file import PlinkFile
 from .genmodels import joint_maf
+from epigen.plink import util
 
 ##
 # Writes the plink data in the location specified by the
@@ -13,93 +13,26 @@ from .genmodels import joint_maf
 #
 # @param m The type of GLM model used to generate data.
 # @param fixed_params The simulation parameters.
-# @param models The list of models to generate from.
+# @param param_list The list of parameters to generate from.
 # @param output_prefix The output prefix, different file endings will be generated.
 #
-def write_data(m, fixed_params, models, output_prefix):
+def write_general_data(model, fixed_params, param_list, output_prefix):
     path, ext = os.path.splitext( output_prefix )
 
     # Number of samples must be known beforehand
-    phenotype = m.generate_phenotype( fixed_params )
-    output_files = OutputFiles( path, phenotype, m.is_binary( ) )
+    phenotype = model.generate_phenotype( fixed_params )
+    output_files = OutputFiles( path, phenotype, model.is_binary( ) )
   
     model_index = 1
-    for num_pairs, is_case, params in models:
+    for num_pairs, is_case, params in param_list:
         for i in range( num_pairs ):
-            snp1, snp2 = m.generate_genotype( fixed_params, params, phenotype )
+            snp1, snp2 = model.generate_genotype( fixed_params, params, phenotype )
             output_files.write( snp1, snp2, is_case, model_index )
         
         model_index += 1
   
     output_files.close( )
     
-##
-# Generates two distinct loci.
-#
-# @param loci List of locus.
-#
-# @return A list of two loci.
-#
-def sample_two_loci(loci):
-    loci_index = list( range( len( loci ) ) )
-    random.shuffle( loci_index )
-
-    return loci_index[:2]
-
-##
-# Generates a phenotype for the given snp pair and penetrance
-# matrix. 
-#
-# @param snp1 Genotype of first snp
-# @param snp2 Genotype of second snp
-# @param model Penetrance matrix as a length 9 list
-#
-# @return 1 or 0 representing case control if no snp was missing, None
-#         otherwise.
-#
-def generate_phenotype(snp1, snp2, model):
-    if snp1 != 3 and snp2 != 3:
-        return int( random.random( ) <= model[ 3 * snp1 + snp2 ] )
-    else:
-        return None
-
-##
-# Generates a normal phenotype for the given snp pair and mean
-# matrix. 
-#
-# @param snp1 Genotype of first snp
-# @param snp2 Genotype of second snp
-# @param model Mean matrix as a length 9 list
-# @param sd Common standard deviation
-#
-# @return Normal variable if not missing, None otherwise.
-#
-def generate_phenotype_cont(snp1, snp2, model, sd):
-    if snp1 != 3 and snp2 != 3:
-        return random.normalvariate( model[ 3 * snp1 + snp2 ], sd )
-    else:
-        return None
-
-##
-# Generates a phenotype for the given snp pair and penetrance
-# matrix. 
-#
-# @param snp1 Genotype of first snp
-# @param snp2 Genotype of second snp
-# @param model Penetrance matrix as a length 9 list
-#
-# @return 1 or 0 representing case control if no snp was missing, None
-#         otherwise.
-#
-def generate_phenotype_additive(variants, beta0, beta):
-    if 3 in variants:
-        return None
-
-    score = beta0 + sum( [ b * v for b, v in zip( beta, variants ) ] )
-    p = 1/(1 + exp(-score))
-    
-    return int( random.random( ) <= p )
-
 ##
 # Generates a phenotype for the given snp pair and penetrance
 # matrix. 
@@ -135,20 +68,47 @@ def generate_environment(env):
 
     raise Exception( "Environmental frequencies does not sum to 1." )
 
+##
+# Writes the phenotypes for two snps and a set of individuals to a file.
+#
+# @param sample_list List of plinkio.plinkfile.Sample.
+# @param rows List of genotypes for all variants.
+# @param beta List of beta coefficients for each variant.
+# @param dispersion Dispersion parameter.
+# @param link The link function.
+# @param output_file The phenotypes will be written to this file.
+# @param beta0 The intercept, if not specified will be set to the overall mean.
+#
+def write_general_phenotype(sample_list, rows, pheno_generator, output_file, plink_format):
+    na_string = "NA"
+    if plink_format:
+        na_string = "-9"
+
+    output_file.write( "FID\tIID\tPheno\n" )
+    for i, sample in enumerate( sample_list ):
+        variants = [ rows[ j ][ i ] for j in range( len( rows ) ) ]
+
+        pheno = pheno_generator.generate_pheno( variants )
+        pheno_str = str( pheno )
+        if pheno == None:
+            pheno_str = na_string
+ 
+        output_file.write( "{0}\t{1}\t{2}\n".format( sample.fid, sample.iid, pheno_str ) )
 
 ##
 # Generate a set of single variants.
 #
 def write_single(nvariants, nsamples, output_prefix, maf = None):
-    pf = PlinkFile( output_prefix, nsamples, 0 )
+    pf = PlinkFile( output_prefix, [ 2 ] * nsamples, 0 )
 
-    generate_maf = lambda: np.random.beta( 0.8, 0.8 )
+    generate_maf = lambda: random.betavariate( 0.8, 0.8 )
     if maf:
         geneate_maf = lambda: maf[ 0 ] + ( maf[ 1 ] - maf[ 0 ] ) * random.random( )
     
     for i in range( nvariants ):
         m = generate_maf( )
-        genotypes = np.random.binomial( 2, m, nsamples )
+        prob = [ (1-m)**2, 2*m*(1-m), m**2 ]
+        genotypes = [ util.sample_categorical( prob, [0, 1, 2] ) for i in range( nsamples ) ]
         pf.write( i, genotypes )
 
     pf.close( )

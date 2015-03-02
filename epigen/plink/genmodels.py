@@ -1,8 +1,6 @@
 import random
-from math import sqrt
-
-import numpy as np
-from scipy.stats import norm
+from math import exp, log, sqrt, pi
+from epigen.plink.util import sample_categorical, joint_maf
 
 ##
 # The parameters that does not changed between models.
@@ -21,10 +19,13 @@ class FixedParams:
             start = self.maf[ 0 ]
             end = self.maf[ 1 ] - start
 
-            return joint_maf( start + end * np.random.random( 2 ), self.ld )
+            m1 = start + end * random.random( )
+            m2 = start + end * random.random( )
+
+            return joint_maf( [ m1, m2 ], self.ld )
 
     def num_samples(self):
-        return self.sample_size
+        return self.sample_size[ 0 ]
 
     def num_cases(self):
         return self.sample_size[ 0 ]
@@ -36,7 +37,7 @@ class FixedParams:
 # This class represents a binary model that is used to first generate
 # a phenotype, and then generate the genotypes.
 #
-class BinaryModel:
+class BinomialModel:
     def generate_phenotype(self, fixed_params):
         return [ 1 ] * fixed_params.num_cases( ) + [ 0 ] * fixed_params.num_controls( )
 
@@ -64,7 +65,16 @@ class BinaryModel:
     def is_binary(self):
         return True
 
-class BinaryParams:
+class BinomialPhenoGenerator:
+    def __init__(self, mu_map):
+        self.mu_map = mu_map
+
+    def generate_pheno(self, variants):
+        mu = self.mu_map.map( variants )
+        p = random.random( )
+        return int( p <= mu )
+
+class BinomialParams:
     def __init__(self, penetrance):
         self.penetrance = penetrance
     
@@ -72,7 +82,7 @@ class BinaryParams:
 # This class represents a continuous model that is used to first generate
 # a phenotype, and then generate the genotypes.
 #
-class ContModel:
+class NormalModel:
     def __init__(self, mu, std, maf):
         self.mu = mu
         self.std = std
@@ -87,8 +97,14 @@ class ContModel:
 
         return [ random.normalvariate( mu, total_std ) for i in range( fixed_params.num_samples( ) ) ]
 
+    def normpdf(x, mean, sd):
+        var = float( sd )**2
+        denom = ( 2 * pi * var )**.5
+        num = exp( -( x - mean )**2 / ( 2*var ) )
+        return num / denom
+
     def joint_prob(self, mu, std, maf, pheno):
-        geno_prob = [ norm.pdf( pheno, m, s ) * f for m, s, f in zip( mu, std, maf ) ]
+        geno_prob = [ self.normpdf( pheno, m, s ) * f for m, s, f in zip( mu, std, maf ) ]
         geno_denom = sum( geno_prob )
 
         return [ g / geno_denom for g in geno_prob ]
@@ -109,50 +125,91 @@ class ContModel:
     def is_binary(self):
         return False
 
-class ContParams:
+class NormalPhenoGenerator:
+    def __init__(self, mu_map, dispersion):
+        self.mu_map = mu_map
+        self.dispersion = dispersion
+
+    def generate_pheno(self, variants):
+        mu = self.mu_map.map( variants )
+        return random.normalvariate( mu, self.dispersion )
+
+class NormalParams:
     def __init__(self, mu, std):
         self.mu = mu
         self.std = std
 
-##
-# Sample genotyeps from a categorical distribution.
-#
-# @param prob The probability for each genotype, specified as a vector by row.
-#
-# @return The sampled genotype.
-#
-def sample_categorical(prob):
-    r = random.random( )
-    cum = 0.0
-    for c, p in zip( [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)], prob ):
-        cum += p
-        if r <= cum:
-            return c
+# Map variants to means
 
-##
-# Computes the joint Hardy-Weinberg model represented
-# as a vector.
-#
-# @param maf Desired minor allele frequncy.
-# @param ld The probability Pr[x2 = i| x1 = i].
-#
-# @return Joint probability model for the Hardy-Weinberg
-#         model.
-#
-def joint_maf(maf, ld):
-    maf1 = maf[ 0 ]
-    maf2 = maf[ 1 ]
+class GeneralMuMap:
+    def __init__(self, mu):
+        self.mu = mu
 
-    p = [ ( 1 - maf[ 0 ] )**2, 2 * maf[ 0 ] * ( 1 - maf[ 0 ] ), ( maf[ 0 ] )**2 ]
-    q = [ ( 1 - maf[ 1 ] )**2, 2 * maf[ 1 ] * ( 1 - maf[ 1 ] ), ( maf[ 1 ] )**2 ]
+    def map(self, variants):
+        if 3 in variants or len( variants ) != 2:
+            return None
+        else:
+            return self.mu[ 3 * variants[ 0 ] + variants[ 1 ] ]
 
-    if not ld:
-        return   [ p[ 0 ] * q[ 0 ], p[ 0 ] * q[ 1 ], p[ 0 ] * q[ 2 ],
-                   p[ 1 ] * q[ 0 ], p[ 1 ] * q[ 1 ], p[ 1 ] * q[ 2 ],
-                   p[ 2 ] * q[ 0 ], p[ 2 ] * q[ 1 ], p[ 2 ] * q[ 2 ] ]
+class AdditiveMuMap:
+    def __init__(self, beta0, beta, link):
+        self.beta0 = beta0
+        self.beta = beta
+        self.link = link
+
+    def map(self, variants):
+        if 3 in variants or len( variants ) != len( self.beta ):
+            return None
+        else:
+            return self.link( beta0 + sum( v * b for v, b in zip( variants, self.beta ) ) )
+
+def get_pheno_generator(model, mu_map, dispersion):
+    if model == "normal":
+        return NormalPhenoGenerator( mu_map, dispersion )
+    elif model == "binomial":
+        return BinomialPhenoGenerator( mu_map )
     else:
-        return   [ p[ 0 ] * ld, p[ 0 ] * ( 1 - ld ) / 2.0, p[ 0 ] * ( 1 - ld ) / 2.0,
-                   p[ 1 ] * ( 1 - ld ) / 2.0, p[ 1 ] * ld, p[ 1 ] * ( 1 - ld ) / 2.0,
-                   p[ 2 ] * ( 1 - ld ) / 2.0, p[ 2 ] * ( 1 - ld ) / 2.0, p[ 2 ] * ld ]
+        raise ValueError( "No such model {0}.".format( model ) )
 
-    return joint_prob
+def get_models():
+    return [ "normal", "binomial" ]
+
+def get_links():
+    return {
+        "identity" : lambda x: x,
+        "log" : exp,
+        "exp" : log,
+        "logc" : lambda x: 1 - exp( x ),
+        "odds" : lambda x: x/(1+x),
+        "logodds" : lambda x: 1/(1+exp(-x)) }
+
+def get_link_names():
+    return get_links( ).keys( )
+
+def get_link(link_str):
+    return get_links( ).get( link_str, None )
+
+def get_mean_values(beta, lf):
+    P = [ [ 1, 0, 0, 0, 0, 0, 0, 0, 0 ],
+          [ 1, 1, 0, 0, 0, 0, 0, 0, 0 ],
+          [ 1, 0, 1, 0, 0, 0, 0, 0, 0 ],
+          [ 1, 0, 0, 1, 0, 0, 0, 0, 0 ],
+          [ 1, 1, 0, 1, 0, 1, 0, 0, 0 ],
+          [ 1, 0, 1, 1, 0, 0, 1, 0, 0 ],
+          [ 1, 0, 0, 0, 1, 0, 0, 0, 0 ],
+          [ 1, 1, 0, 0, 1, 0, 0, 1, 0 ],
+          [ 1, 0, 1, 0, 1, 0, 0, 0, 1 ] ]
+    
+    mu = [ ]
+    for row in P:
+        mu.append( lf( sum( r * b for r, b in zip( row, beta ) ) ) )
+
+    return mu
+
+def get_model_and_params(model, mu, std, maf):
+    if model == "normal":
+        return NormalModel( mu, [ std ] * 9, maf ), NormalParams( mu, [ std ] * 9 )
+    elif model == "binomial":
+        return BinomialModel( ), BinomialParams( mu ) 
+    else:
+        raise ValueError( "Unknown model {0}".format( model ) )
