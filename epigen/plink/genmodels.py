@@ -24,6 +24,9 @@ class FixedParams:
 
             return joint_maf( [ m1, m2 ], self.ld )
 
+    def maf_is_fixed(self):
+        return not self.sample_maf
+
     def num_samples(self):
         return self.sample_size[ 0 ]
 
@@ -38,6 +41,9 @@ class FixedParams:
 # a phenotype, and then generate the genotypes.
 #
 class BinomialModel:
+    def init_cache(self, fixed_params, params, phenotype):
+        pass
+
     def generate_phenotype(self, fixed_params):
         return [ 1 ] * fixed_params.num_cases( ) + [ 0 ] * fixed_params.num_controls( )
 
@@ -87,6 +93,7 @@ class NormalModel:
         self.mu = mu
         self.std = std
         self.maf = joint_maf( maf, None )
+        self.prob_cache = { }
 
     def generate_phenotype(self, fixed_params):
         mu = sum( ( m * f for m, f in zip( self.mu, self.maf ) ) )
@@ -97,7 +104,15 @@ class NormalModel:
 
         return [ random.normalvariate( mu, total_std ) for i in range( fixed_params.num_samples( ) ) ]
 
-    def normpdf(x, mean, sd):
+    def init_cache(self, fixed_params, params, phenotype):
+        if fixed_params.maf_is_fixed( ):
+            self.prob_cache = { }
+            maf = fixed_params.get_maf( )
+            for pheno in phenotype:
+                prob_geno = self.joint_prob( params.mu, params.std, maf, pheno )
+                self.prob_cache[ pheno ] = prob_geno
+
+    def normpdf(self, x, mean, sd):
         var = float( sd )**2
         denom = ( 2 * pi * var )**.5
         num = exp( -( x - mean )**2 / ( 2*var ) )
@@ -113,8 +128,13 @@ class NormalModel:
         snp1_list = list( )
         snp2_list = list( )
         maf = fixed_params.get_maf( )
-        for pheno in phenotype:
-            prob_geno = self.joint_prob( params.mu, params.std, maf, pheno )
+
+        # Cache genotype probs since they are expensive to compute
+        prob_geno_list = ( self.joint_prob( params.mu, params.std, maf, p ) for p in phenotype )
+        if len( self.prob_cache ) > 0:
+            prob_geno_list = ( self.prob_cache[ p ] for p in phenotype )
+
+        for prob_geno in prob_geno_list:
             snp1, snp2 = sample_categorical( prob_geno )
             
             snp1_list.append( snp1 )

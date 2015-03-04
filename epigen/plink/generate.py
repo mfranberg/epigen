@@ -25,6 +25,7 @@ def write_general_data(model, fixed_params, param_list, output_prefix):
   
     model_index = 1
     for num_pairs, is_case, params in param_list:
+        model.init_cache( fixed_params, params, phenotype )
         for i in range( num_pairs ):
             snp1, snp2 = model.generate_genotype( fixed_params, params, phenotype )
             output_files.write( snp1, snp2, is_case, model_index )
@@ -108,7 +109,7 @@ def write_single(nvariants, nsamples, output_prefix, maf = None):
     for i in range( nvariants ):
         m = generate_maf( )
         prob = [ (1-m)**2, 2*m*(1-m), m**2 ]
-        genotypes = [ util.sample_categorical( prob, [0, 1, 2] ) for i in range( nsamples ) ]
+        genotypes = [ util.sample_categorical( prob, [0, 1, 2] ) for j in range( nsamples ) ]
         pf.write( i, genotypes )
 
     pf.close( )
