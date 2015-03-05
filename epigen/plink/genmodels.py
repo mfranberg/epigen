@@ -77,8 +77,11 @@ class BinomialPhenoGenerator:
 
     def generate_pheno(self, variants):
         mu = self.mu_map.map( variants )
-        p = random.random( )
-        return int( p <= mu )
+        if mu != None:
+            p = random.random( )
+            return int( p <= mu )
+        else:
+            return None
 
 class BinomialParams:
     def __init__(self, penetrance):
@@ -152,7 +155,10 @@ class NormalPhenoGenerator:
 
     def generate_pheno(self, variants):
         mu = self.mu_map.map( variants )
-        return random.normalvariate( mu, self.dispersion )
+        if mu != None:
+            return random.normalvariate( mu, self.dispersion )
+        else:
+            return None
 
 class NormalParams:
     def __init__(self, mu, std):
