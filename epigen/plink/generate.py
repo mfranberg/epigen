@@ -106,7 +106,7 @@ def write_general_phenotype(sample_list, rows, pheno_generator, output_file, pli
 def generate_pairs(plink_prefix):
     pf = plinkfile.open( plink_prefix )
     loci = pf.get_loci( )
-    
+   
     if len( loci ) > 10000:
         raise ValueError( "Creating pairs for more than 10000 variants is too time consuming." )
 
@@ -121,6 +121,9 @@ def generate_pairs(plink_prefix):
 # Generate a set of single variants.
 #
 def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = False):
+    if create_pair and nvariants > 10000:
+        raise ValueError( "Creating pairs for more than 10000 variants is too time consuming." )
+    
     pf = PlinkFile( output_prefix, [ 2 ] * nsamples, 0 )
 
     # These a and b values were taken by fitting a beta distribution to the
