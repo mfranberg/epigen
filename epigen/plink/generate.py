@@ -102,7 +102,9 @@ def write_general_phenotype(sample_list, rows, pheno_generator, output_file, pli
 def write_single(nvariants, nsamples, output_prefix, maf = None):
     pf = PlinkFile( output_prefix, [ 2 ] * nsamples, 0 )
 
-    generate_maf = lambda: random.betavariate( 0.8, 0.8 )
+    # These a and b values were taken by fitting a beta distribution to the
+    # allele frequency distribution of EUR 1000G.
+    generate_maf = lambda: random.betavariate( 0.4679562, 0.4679562 )
     if maf:
         geneate_maf = lambda: maf[ 0 ] + ( maf[ 1 ] - maf[ 0 ] ) * random.random( )
     
