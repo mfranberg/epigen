@@ -187,7 +187,7 @@ class AdditiveMuMap:
         if 3 in variants or len( variants ) != len( self.beta ):
             return None
         else:
-            return self.link( beta0 + sum( v * b for v, b in zip( variants, self.beta ) ) )
+            return self.link( self.beta0 + sum( v * b for v, b in zip( variants, self.beta ) ) )
 
 def get_pheno_generator(model, mu_map, dispersion):
     if model == "normal":
