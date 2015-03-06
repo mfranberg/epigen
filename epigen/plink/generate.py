@@ -1,11 +1,14 @@
 import random
 import os
+import sys
 from math import exp
 
 from .output import OutputFiles
 from .plink_file import PlinkFile
 from .genmodels import joint_maf
 from epigen.plink import util
+
+from plinkio import plinkfile
 
 ##
 # Writes the plink data in the location specified by the
@@ -97,9 +100,27 @@ def write_general_phenotype(sample_list, rows, pheno_generator, output_file, pli
         output_file.write( "{0}\t{1}\t{2}\n".format( sample.fid, sample.iid, pheno_str ) )
 
 ##
+# Writes the .pair file for a given plink file. This
+# can be very time consuming for a large number of variants.
+#
+def generate_pairs(plink_prefix):
+    pf = plinkfile.open( plink_prefix )
+    loci = pf.get_loci( )
+    
+    if len( loci ) > 10000:
+        raise ValueError( "Creating pairs for more than 10000 variants is too time consuming." )
+
+    with open( plink_prefix + ".pair", "w" ) as pair_file:
+        for i in range( len( loci ) ):
+            for j in range( i + 1, len( loci ) ):
+                pair_file.write( "{0} {1}\n".format( loci[ i ].name, loci[ j ].name ) )
+
+    return
+
+##
 # Generate a set of single variants.
 #
-def write_single(nvariants, nsamples, output_prefix, maf = None):
+def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = False):
     pf = PlinkFile( output_prefix, [ 2 ] * nsamples, 0 )
 
     # These a and b values were taken by fitting a beta distribution to the
@@ -115,3 +136,7 @@ def write_single(nvariants, nsamples, output_prefix, maf = None):
         pf.write( i, genotypes )
 
     pf.close( )
+
+    if create_pair:
+        generate_pairs( output_prefix )
+
