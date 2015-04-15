@@ -48,7 +48,12 @@ class BinomialModel:
         return [ 1 ] * fixed_params.num_cases( ) + [ 0 ] * fixed_params.num_controls( )
 
     def joint_prob(self, maf, penetrance, phenotype):
-        geno_prob = [ p * f for p, f in zip( penetrance, maf ) ]
+        geno_prob = None
+        if phenotype == 1:
+            geno_prob = [ p * f for p, f in zip( penetrance, maf ) ]
+        else:
+            geno_prob = [ (1-p) * f for p, f in zip( penetrance, maf ) ]
+        
         geno_denom = sum( geno_prob )
 
         return [ g / geno_denom for g in geno_prob ]
