@@ -104,13 +104,8 @@ class NormalModel:
         self.prob_cache = { }
 
     def generate_phenotype(self, fixed_params):
-        mu = sum( ( m * f for m, f in zip( self.mu, self.maf ) ) )
-        mu2 = sum( ( m**2 * f for m, f in zip( self.mu, self.maf ) ) )
-        std2 = sum( ( s**2 * f for s, f in zip( self.std, self.maf ) ) )
-
-        total_std = sqrt( mu2 - mu**2 + std2 )
-
-        return [ random.normalvariate( mu, total_std ) for i in range( fixed_params.num_samples( ) ) ]
+        genotypes = ( sample_categorical( self.maf ) for i in range( fixed_params.num_samples( ) ) )
+        return [ random.normalvariate( self.mu[ 3 * s1 + s2 ], self.std[ 3 * s1 + s2 ] ) for s1, s2 in genotypes ]
 
     def init_cache(self, fixed_params, params, phenotype):
         if fixed_params.maf_is_fixed( ):

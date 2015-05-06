@@ -100,6 +100,67 @@ def write_general_phenotype(sample_list, rows, pheno_generator, output_file, pli
         output_file.write( "{0}\t{1}\t{2}\n".format( sample.fid, sample.iid, pheno_str ) )
 
 ##
+# Generate case/control data that contains both variants that are associated with
+# phenotype (true) and variants that are not (false).
+#
+# @param pheno_generator A PhenoGenerator object.
+# @param sample_size The number of cases and controls.
+# @param mafs A list of minor allele frequency for each snp (the first num_true are
+#             assumed to belong to the true variants).
+# @param num_true The number of variants associated with the phenotype.
+# @param num_false The number of variants not associated with the phenotype.
+# @param output_prefix The output plink prefix.
+# @param pheno_file The phenotype file.
+# @param plink_format Should the phenotype be in plink format?
+#
+def write_casecontrol_data(pheno_generator, sample_size, mafs, num_true, num_false, output_prefix, pheno_file, plink_format):
+    na_string = "NA"
+    if plink_format:
+        na_string = "-9"
+    
+    num_cases = 0
+    num_controls = 0
+    num_samples = 0
+
+    true_mafs = mafs[ :num_true ]
+    false_mafs = mafs[ num_true: ]
+
+    true_variants_matrix = list( )
+
+    pheno_file.write( "FID\tIID\tPheno\n" )
+    while num_samples < sample_size[ 0 ] + sample_size[ 1 ]:
+        true_variants = generate_variant_set( true_mafs )
+
+        pheno = pheno_generator.generate_pheno( true_variants )
+        pheno_str = str( pheno )
+        if pheno == None:
+            pheno_str = na_string
+
+        if pheno == 0 and num_controls < sample_size[ 0 ]:
+            num_controls += 1
+            num_samples += 1
+        elif pheno == 1 and num_cases < sample_size[ 1 ]:
+            num_cases += 1
+            num_samples += 1
+        else:
+            continue
+
+        pheno_file.write( "fid{0}\tiid{0}\t{1}\n".format( num_samples - 1, pheno_str ) )
+        true_variants_matrix.append( true_variants )
+
+    # Write the genotype data consisting of both true and false variants
+    pf = PlinkFile( output_prefix, [ -9 ] * num_samples, True )
+    for i in range( num_true ):
+        true_row = [ true_variants_matrix[ j ][ i ] for j in range( num_samples ) ]
+        pf.write( i, true_row )
+
+    for i in range( num_false ):
+        false_row = generate_variant_row( false_mafs[ i ], num_samples )
+        pf.write( num_true + i, false_row )
+
+    pf.close( )
+
+##
 # Writes the .pair file for a given plink file. This
 # can be very time consuming for a large number of variants.
 #
@@ -124,7 +185,7 @@ def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = F
     if create_pair and nvariants > 10000:
         raise ValueError( "Creating pairs for more than 10000 variants is too time consuming." )
     
-    pf = PlinkFile( output_prefix, [ 2 ] * nsamples, 0 )
+    pf = PlinkFile( output_prefix, [ -9 ] * nsamples, 0 )
 
     # These a and b values were taken by fitting a beta distribution to the
     # allele frequency distribution of EUR 1000G.
@@ -134,8 +195,7 @@ def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = F
     
     for i in range( nvariants ):
         m = generate_maf( )
-        prob = [ (1-m)**2, 2*m*(1-m), m**2 ]
-        genotypes = [ util.sample_categorical( prob, [0, 1, 2] ) for j in range( nsamples ) ]
+        genotypes = [ generate_variant( m ) for j in range( nsamples ) ]
         pf.write( i, genotypes )
 
     pf.close( )
@@ -143,3 +203,34 @@ def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = F
     if create_pair:
         generate_pairs( output_prefix )
 
+##
+# Generate a single variant.
+#
+# @param m The minor allele frequency.
+#
+# @return The genotype of the variant.
+# 
+def generate_variant(m):
+    return util.sample_categorical( [ (1-m)**2, 2*m*(1-m), m**2 ], [ 0, 1, 2 ] )
+
+##
+# Generate a set of variants according to a list
+# of minor allele frequencies.
+#
+# @param mafs A list of minor allele frequencies.
+#
+# @return A list of genotypes corresponding to each maf.
+# 
+def generate_variant_set(mafs):
+    return [ generate_variant( m ) for m in mafs ]
+
+##
+# Generate a variant for a set of individuals.
+#
+# @param m The minor allele frequency.
+# @param num_samples The number of samples.
+#
+# @return A genotype for each sample.
+# 
+def generate_variant_row(m, num_samples):
+    return [ generate_variant( m ) for i in range( num_samples ) ]

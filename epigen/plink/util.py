@@ -53,6 +53,52 @@ def sample_categorical(prob, cat=[(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)
         if r <= cum:
             return c
 
+def fast_sample_setup(probs):
+    K = len( probs )
+    q = [ 0.0 ] * K
+    J = [ 0 ] * K
+ 
+    # Sort the data into the outcomes with probabilities
+    # that are larger and smaller than 1/K.
+    smaller = [ ]
+    larger  = [ ]
+    for kk, prob in enumerate( probs ):
+        q[ kk ] = K * prob
+        if q[ kk ] < 1.0:
+            smaller.append( kk )
+        else:
+            larger.append( kk )
+ 
+    # Loop though and create little binary mixtures that
+    # appropriately allocate the larger outcomes over the
+    # overall uniform mixture.
+    while len( smaller ) > 0 and len( larger ) > 0:
+        small = smaller.pop( )
+        large = larger.pop( )
+ 
+        J[ small ] = large
+        q[ large ] = q[ large ] - ( 1.0 - q[ small ] )
+ 
+        if q[ large ] < 1.0:
+            smaller.append( large )
+        else:
+            larger.append( large )
+ 
+    return J, q
+ 
+def fast_sample(J, q, cat=[(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)] ):
+    K  = len( J )
+ 
+    # Draw from the overall uniform mixture.
+    kk = random.randint( 0, K - 1 )
+ 
+    # Draw from the binary mixture, either keeping the
+    # small one, or choosing the associated larger one.
+    if random.random( ) < q[ kk ]:
+        return cat[ kk ]
+    else:
+        return cat[ J[ kk ] ]
+
 ##
 # Computes the joint Hardy-Weinberg model represented
 # as a vector.
