@@ -61,8 +61,8 @@ class BinomialModel:
     def generate_genotype(self, fixed_params, params, phenotype):
         maf = fixed_params.get_maf( )
         prob = [ ]
-        prob.append( self.joint_prob( maf, params.penetrance, 1 ) )
         prob.append( self.joint_prob( maf, params.penetrance, 0 ) )
+        prob.append( self.joint_prob( maf, params.penetrance, 1 ) )
 
         snp1_list = list( )
         snp2_list = list( )
