@@ -112,8 +112,9 @@ def write_general_phenotype(sample_list, rows, pheno_generator, output_file, pli
 # @param output_prefix The output plink prefix.
 # @param pheno_file The phenotype file.
 # @param plink_format Should the phenotype be in plink format?
+# @param create_pair Should a .pair file be created?
 #
-def write_casecontrol_data(pheno_generator, sample_size, mafs, num_true, num_false, output_prefix, pheno_file, plink_format):
+def write_casecontrol_data(pheno_generator, sample_size, mafs, num_true, num_false, output_prefix, pheno_file, plink_format = False, create_pair = True):
     na_string = "NA"
     if plink_format:
         na_string = "-9"
@@ -159,6 +160,9 @@ def write_casecontrol_data(pheno_generator, sample_size, mafs, num_true, num_fal
         pf.write( num_true + i, false_row )
 
     pf.close( )
+    
+    if create_pair:
+        generate_pairs( output_prefix )
 
 ##
 # Writes the .pair file for a given plink file. This
