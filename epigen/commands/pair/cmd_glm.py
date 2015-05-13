@@ -1,6 +1,6 @@
 import click
 from epigen.commands.command import CommandWithHelp
-from epigen.plink import generate, genmodels
+from epigen.plink import generate, genmodels, info
 from epigen.util import probability
 
 @click.command( 'glm', cls = CommandWithHelp, short_help="Generates a plink file by conditioning on the phenotype and generating genotypes, useful for case/control." )
@@ -22,4 +22,5 @@ def epigen(model, link, beta, dispersion, maf, sample_maf, sample_size, npairs, 
 
     fixed_params = genmodels.FixedParams( maf, ld, sample_size, sample_maf )
     model_list = [ ( npairs, 1, params ) ]
+    info.write_info( model, mu, maf, dispersion, sample_size, out + ".info" )
     generate.write_general_data( model_def, fixed_params, model_list, out )

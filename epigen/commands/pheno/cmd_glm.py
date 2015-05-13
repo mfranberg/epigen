@@ -1,10 +1,10 @@
 import click
 from plinkio import plinkfile
 
-from epigen.plink import generate, genmodels
+from epigen.plink import generate, genmodels, info
 from epigen.util import probability
 from epigen.commands.command import CommandWithHelp
-from epigen.plink.util import find_rows, sample_loci_set, find_beta0
+from epigen.plink.util import find_rows, sample_loci_set, find_beta0, compute_mafs
 
 @click.command( 'glm', cls = CommandWithHelp, short_help='Generates a phenotype under the given GLM model and plink file.' )
 @click.option( '--model', type=click.Choice( genmodels.get_models( ) ), help='The type of model to use.', required = True )
@@ -31,3 +31,4 @@ def epigen(model, link, beta, dispersion, pair, plink_format, out, plink_file):
     mu_map = genmodels.GeneralMuMap( mu )
     pheno_generator = genmodels.get_pheno_generator( model, mu_map, dispersion )
     generate.write_general_phenotype( input_file.get_samples( ), rows, pheno_generator, out, plink_format )
+    info.write_info( model, mu, compute_mafs( rows ), dispersion, pheno_generator.sample_size, plink_file + ".info" )

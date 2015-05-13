@@ -142,6 +142,18 @@ def compute_maf(row):
     return p
 
 ##
+# Computes the second allele frequency for the
+# given list of lists of genotypes.
+#
+# @param rows Genotypes 0, 1, 2. Here 3 is missing.
+#
+# @return A list of second allele frequencies.
+#
+def compute_mafs(rows):
+    return [ compute_maf( r ) for r in rows ]
+    
+
+##
 # Determines a beta0 that gives the probability of being
 # a case 0.5.
 #

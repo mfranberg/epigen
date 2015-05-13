@@ -3,10 +3,11 @@ import os
 import sys
 from math import exp
 
-from .output import OutputFiles
-from .plink_file import PlinkFile
-from .genmodels import joint_maf
+from epigen.plink.output import OutputFiles
+from epigen.plink.plink_file import PlinkFile
+from epigen.plink.genmodels import joint_maf
 from epigen.plink import util
+from epigen.plink import variant
 
 from plinkio import plinkfile
 
@@ -130,7 +131,7 @@ def write_casecontrol_data(pheno_generator, sample_size, mafs, num_true, num_fal
 
     pheno_file.write( "FID\tIID\tPheno\n" )
     while num_samples < sample_size[ 0 ] + sample_size[ 1 ]:
-        true_variants = generate_variant_set( true_mafs )
+        true_variants = variant.generate_variant_set( true_mafs )
 
         pheno = pheno_generator.generate_pheno( true_variants )
         pheno_str = str( pheno )
@@ -156,7 +157,7 @@ def write_casecontrol_data(pheno_generator, sample_size, mafs, num_true, num_fal
         pf.write( i, true_row )
 
     for i in range( num_false ):
-        false_row = generate_variant_row( false_mafs[ i ], num_samples )
+        false_row = variant.generate_variant_row( false_mafs[ i ], num_samples )
         pf.write( num_true + i, false_row )
 
     pf.close( )
@@ -199,7 +200,7 @@ def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = F
     
     for i in range( nvariants ):
         m = generate_maf( )
-        genotypes = [ generate_variant( m ) for j in range( nsamples ) ]
+        genotypes = [ variant.generate_variant( m ) for j in range( nsamples ) ]
         pf.write( i, genotypes )
 
     pf.close( )
@@ -207,34 +208,3 @@ def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = F
     if create_pair:
         generate_pairs( output_prefix )
 
-##
-# Generate a single variant.
-#
-# @param m The minor allele frequency.
-#
-# @return The genotype of the variant.
-# 
-def generate_variant(m):
-    return util.sample_categorical( [ (1-m)**2, 2*m*(1-m), m**2 ], [ 0, 1, 2 ] )
-
-##
-# Generate a set of variants according to a list
-# of minor allele frequencies.
-#
-# @param mafs A list of minor allele frequencies.
-#
-# @return A list of genotypes corresponding to each maf.
-# 
-def generate_variant_set(mafs):
-    return [ generate_variant( m ) for m in mafs ]
-
-##
-# Generate a variant for a set of individuals.
-#
-# @param m The minor allele frequency.
-# @param num_samples The number of samples.
-#
-# @return A genotype for each sample.
-# 
-def generate_variant_row(m, num_samples):
-    return [ generate_variant( m ) for i in range( num_samples ) ]

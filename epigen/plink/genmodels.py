@@ -79,12 +79,15 @@ class BinomialModel:
 class BinomialPhenoGenerator:
     def __init__(self, mu_map):
         self.mu_map = mu_map
+        self.sample_size = [ 0, 0 ]
 
     def generate_pheno(self, variants):
         mu = self.mu_map.map( variants )
         if mu != None:
             p = random.random( )
-            return int( p <= mu )
+            y = int( p <= mu )
+            self.sample_size[ y ] += 1
+            return y
         else:
             return None
 
@@ -152,10 +155,12 @@ class NormalPhenoGenerator:
     def __init__(self, mu_map, dispersion):
         self.mu_map = mu_map
         self.dispersion = dispersion
+        self.sample_size = [ 0, 0 ]
 
     def generate_pheno(self, variants):
         mu = self.mu_map.map( variants )
         if mu != None:
+            self.sample_size += 1
             return random.normalvariate( mu, self.dispersion )
         else:
             return None

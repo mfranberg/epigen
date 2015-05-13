@@ -2,8 +2,8 @@ import click
 from plinkio import plinkfile
 import random
 
-from epigen.plink import generate, genmodels
-from epigen.plink.util import find_rows, sample_loci_set, find_beta0, generate_beta
+from epigen.plink import generate, genmodels, info
+from epigen.plink.util import find_rows, sample_loci_set, find_beta0, generate_beta, compute_mafs
 from epigen.commands.command import CommandWithHelp
 
 @click.command( 'additive', cls = CommandWithHelp, short_help='Generates binary phenotypes for given plink data.' )
@@ -28,3 +28,4 @@ def epigen(plink_file, beta0, beta, num_loci, model, link, dispersion, out):
     mu_map = genmodels.AdditiveMuMap( beta0, gen_beta, genmodels.get_link( model, link ) )
     pheno_generator = genmodels.get_pheno_generator( model, mu_map, dispersion )
     generate.write_general_phenotype( input_file.get_samples( ), rows, pheno_generator, out, False )
+    info.write_info( model, mu_map, compute_mafs( rows ), dispersion, pheno_generator.sample_size, plink_file + ".info" )
