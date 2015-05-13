@@ -113,10 +113,9 @@ def estimate_heritability(model, mu_map, maf, dispersion, pop_mu):
 # @param dispersion The dispersion.
 # @param sample_size The sample size.
 # @param output_path The output path of the json file.
+# @param info Additional parameters to write.
 #
-def write_info(model, mu, maf, dispersion, sample_size, output_path):
-    info = dict( )
-
+def write_info(model, mu, maf, dispersion, sample_size, output_path, info = dict( )):
     if model == "binomial":
         info[ "case-control-ratio" ] = float( sample_size[ 0 ] ) / sum( sample_size )
 

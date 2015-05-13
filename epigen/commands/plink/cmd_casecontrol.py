@@ -53,7 +53,7 @@ def epigen(maf, mu, beta0, beta, beta_sim, link, dispersion, num_true, num_false
         exit( 1 )
     
     mafs = generate_mafs( maf, num_true + num_false )
-    info.write_info( "binomial", mu_values, mafs[ :num_true ], dispersion, sample_size, out + ".info" )
+    info.write_info( "binomial", mu_values, mafs[ :num_true ], dispersion, sample_size, out + ".info", { "num-true" : num_true, "num-false" : num_false } )
     with open( out + ".pheno", "w" ) as pheno_file:
         generate.write_casecontrol_data( pheno_generator, sample_size, mafs, num_true, num_false, out, pheno_file, False ) 
 
