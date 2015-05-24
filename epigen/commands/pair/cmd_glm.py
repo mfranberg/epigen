@@ -12,7 +12,7 @@ from epigen.util import probability
 @click.option( '--sample-maf/--no-sample-maf', help='The --maf is treated as a range and maf is sampled uniformly in this range.', default = False )
 @click.option( '--sample-size', nargs=2, type=int, help='Number of samples (for binomial cases and controls, only first will be considered otherwise).', default = [2000, 2000] )
 @click.option( '--npairs', type=int, help='Number of interaction pairs', default = 100 )
-@click.option( '--ld', type=probability.probability, help='Strength of LD (signed Lewontin's D\').', default = None )
+@click.option( '--ld', type=probability.probability, help='Strength of LD (signed Lewontin\'s D\').', default = None )
 @click.option( '--out', help='Output plink file.', type=click.Path( writable = True ), required = True )
 def epigen(model, link, beta, dispersion, maf, sample_maf, sample_size, npairs, ld, out):
     lf = genmodels.get_link( model, link )
