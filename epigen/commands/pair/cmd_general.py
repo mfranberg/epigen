@@ -11,12 +11,12 @@ from epigen.util import probability
 @click.option( '--sample-maf/--no-sample-maf', help='The --maf is treated as a range and maf is sampled uniformly in this range.', default = False )
 @click.option( '--sample-size', nargs=2, type=int, help='Number of samples (if only one group only first argument will be used).', default = [2000, 2000] )
 @click.option( '--npairs', type=int, help='Number of interaction pairs', default = 100 )
-@click.option( '--ld', type=probability.probability, help='Strength of LD (ignores second maf).', default = None )
+@click.option( '--ld', type=probability.probability, help='Strength of LD (signed Lewontin's D\').', default = None )
 @click.option( '--out', help='Output plink file.', type=click.Path( writable = True ), required = True )
 def epigen(model, mu, dispersion, maf, sample_maf, sample_size, npairs, ld, out):
     fixed_params = genmodels.FixedParams( maf, ld, sample_size, sample_maf )
 
-    model_def, model_params = genmodels.get_model_and_params( model, mu, dispersion, maf )
+    model_def, model_params = genmodels.get_model_and_params( model, mu, dispersion, maf, ld )
     params = [ ( npairs, 1, model_params ) ]
     info.write_info( model, mu, maf, dispersion, sample_size, out + ".info" )
     generate.write_general_data( model_def, fixed_params, params, out )

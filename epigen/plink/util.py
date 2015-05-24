@@ -104,7 +104,7 @@ def fast_sample(J, q, cat=[(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0
 # as a vector.
 #
 # @param maf Desired minor allele frequncy.
-# @param ld The probability Pr[x2 = i| x1 = i].
+# @param ld Signed lewontin's D'.
 #
 # @return Joint probability model for the Hardy-Weinberg
 #         model.
@@ -113,19 +113,23 @@ def joint_maf(maf, ld):
     maf1 = maf[ 0 ]
     maf2 = maf[ 1 ]
 
-    p = [ ( 1 - maf[ 0 ] )**2, 2 * maf[ 0 ] * ( 1 - maf[ 0 ] ), ( maf[ 0 ] )**2 ]
-    q = [ ( 1 - maf[ 1 ] )**2, 2 * maf[ 1 ] * ( 1 - maf[ 1 ] ), ( maf[ 1 ] )**2 ]
-
     if not ld:
+        p = [ ( 1 - maf[ 0 ] )**2, 2 * maf[ 0 ] * ( 1 - maf[ 0 ] ), ( maf[ 0 ] )**2 ]
+        q = [ ( 1 - maf[ 1 ] )**2, 2 * maf[ 1 ] * ( 1 - maf[ 1 ] ), ( maf[ 1 ] )**2 ]
         return   [ p[ 0 ] * q[ 0 ], p[ 0 ] * q[ 1 ], p[ 0 ] * q[ 2 ],
                    p[ 1 ] * q[ 0 ], p[ 1 ] * q[ 1 ], p[ 1 ] * q[ 2 ],
                    p[ 2 ] * q[ 0 ], p[ 2 ] * q[ 1 ], p[ 2 ] * q[ 2 ] ]
     else:
-        return   [ p[ 0 ] * ld, p[ 0 ] * ( 1 - ld ) / 2.0, p[ 0 ] * ( 1 - ld ) / 2.0,
-                   p[ 1 ] * ( 1 - ld ) / 2.0, p[ 1 ] * ld, p[ 1 ] * ( 1 - ld ) / 2.0,
-                   p[ 2 ] * ( 1 - ld ) / 2.0, p[ 2 ] * ( 1 - ld ) / 2.0, p[ 2 ] * ld ]
+        Dmax = min( 1 - maf1*maf2, 1 - (1 -maf1)*(1-maf2), maf1*(1-maf2), (1-maf1)*maf2 )
+        if ld < 0:
+            Dmax = min( maf1*maf2, (1 -maf1)*(1-maf2), 1 - maf1*(1-maf2), 1 - (1-maf1)*maf2 )
+        D = ld * Dmax
 
-    return joint_prob
+        pq = [ (1 - maf1)*(1 - maf2) + D, maf1*(1-maf2) - D, (1-maf1)*maf2 - D, maf1*maf2 + D ]
+
+        return [ pq[ 0 ]**2, 2*pq[ 0 ] * pq[ 1 ], pq[ 1 ]**2,
+                 2*pq[ 0 ] * pq[ 2 ], 2*pq[ 0 ] * pq[ 3 ] + 2 * pq[ 1 ] * pq[ 2 ], 2*pq[1]*pq[3],
+                 pq[ 2 ]**2, 2*pq[ 2 ] * pq[ 3 ], pq[ 3 ]**2 ]
 
 ##
 # Computes the second allele frequency for the

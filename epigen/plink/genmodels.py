@@ -100,10 +100,10 @@ class BinomialParams:
 # a phenotype, and then generate the genotypes.
 #
 class NormalModel:
-    def __init__(self, mu, std, maf):
+    def __init__(self, mu, std, maf, ld):
         self.mu = mu
         self.std = std
-        self.maf = joint_maf( maf, None )
+        self.maf = joint_maf( maf, ld )
         self.prob_cache = { }
 
     def generate_phenotype(self, fixed_params):
@@ -247,9 +247,9 @@ def get_mean_values(beta, lf):
 
     return mu
 
-def get_model_and_params(model, mu, std, maf):
+def get_model_and_params(model, mu, std, maf, ld):
     if model == "normal":
-        return NormalModel( mu, [ std ] * 9, maf ), NormalParams( mu, [ std ] * 9 )
+        return NormalModel( mu, [ std ] * 9, maf, ld ), NormalParams( mu, [ std ] * 9 )
     elif model == "binomial":
         return BinomialModel( ), BinomialParams( mu ) 
     else:
