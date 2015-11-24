@@ -1,7 +1,7 @@
 import random
 import os
 import sys
-from math import exp
+from math import exp, ceil
 
 from epigen.plink.output import OutputFiles
 from epigen.plink.plink_file import PlinkFile
@@ -207,4 +207,69 @@ def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = F
 
     if create_pair:
         generate_pairs( output_prefix )
+
+##
+# Generate a set of single variants.
+#
+def write_related(nvariants, nsamples, nancestors, nsegments, output_prefix, maf = None, create_pair = False):
+    if create_pair and nvariants > 10000:
+        raise ValueError( "Creating pairs for more than 10000 variants is too time consuming, use besiq pairs instead." )
+    
+    pf = PlinkFile( output_prefix, [ -9 ] * nsamples, 0 )
+
+    # These a and b values were taken by fitting a beta distribution to the
+    # allele frequency distribution of EUR 1000G.
+    generate_maf = lambda: random.betavariate( 0.4679562, 0.4679562 )
+    if maf:
+        geneate_maf = lambda: maf[ 0 ] + ( maf[ 1 ] - maf[ 0 ] ) * random.random( )
+
+    # Generate allele frequencies
+    maf = [ generate_maf( ) for i in range( nvariants ) ]
+
+    # Generate ancestral haplotypes
+    haplotypes = [ ]
+    for i in range( nancestors ):
+        haplotypes.append( [ int( random.random( ) <= f ) for f in maf ] )
+
+    for i in range( nvariants ):
+        geno_sum = sum( haplotypes[ h ][ i ] for h in range( nancestors ) )
+        if geno_sum == 0 or geno_sum == nancestors:
+            r = random.randint( 0, nancestors - 1 )
+            haplotypes[ r ][ i ] = ( haplotypes[ r ][ i ] + 1 ) % 2
+
+    segments = [ 0 ]
+    while segments[ -1 ] < nvariants:        
+        break_length = random.expovariate( nvariants / nsegments )
+        next_break = segments[ -1 ] + max( int( break_length *  nvariants ), 1 )
+        if next_break >= nvariants:
+            next_break = nvariants
+
+        segments.append( next_break )
+
+    # Determine ancestry of each segment, will allow us to generate
+    # data per variant.
+    path = [ ]
+    for i in range( nsamples ):
+        cur_haplo = list( )
+        for h in range( 2 ):
+            ancestry = dict( )
+            for s in segments[ :-1 ]:
+                ancestry[ s ] = random.randint( 0, nancestors - 1 )
+            
+            cur_haplo.append( ancestry )
+        
+        path.append( cur_haplo )
+
+    # Generate data per snp
+    for i in range( 1, len( segments ) ):
+        for v in range( segments[ i - 1 ], segments[ i ] ):
+            genotypes = [ haplotypes[ path[ sample ][ 0 ][ segments[ i - 1 ] ] ][ v ] +
+                haplotypes[ path[ sample ][ 1 ][ segments[ i - 1 ] ]][ v ] for sample in range( nsamples ) ]
+            pf.write( v, genotypes )
+
+    pf.close( )
+
+    if create_pair:
+        generate_pairs( output_prefix )
+
 
