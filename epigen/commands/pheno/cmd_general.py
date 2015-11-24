@@ -20,7 +20,7 @@ def epigen(model, mu, dispersion, pair, plink_format, out, plink_file):
 
     snp_indices = sample_loci_set( loci, 2 )
     if pair:
-        snp_indices = [ i for i, x in enumerate( loci ) if x in pair ]
+        snp_indices = [ i for i, x in enumerate( loci ) if x.name in pair ]
 
     rows = find_rows( input_file, snp_indices )
 
