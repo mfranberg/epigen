@@ -201,6 +201,11 @@ def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = F
     for i in range( nvariants ):
         m = generate_maf( )
         genotypes = [ variant.generate_variant( m ) for j in range( nsamples ) ]
+        maf = sum( genotypes ) / ( 2.0 * nsamples )
+        if maf * ( 1 - maf ) <= 0.0:
+            r = random.randint( 0, nsamples - 1 )
+            genotypes[ r ] = 1 
+
         pf.write( i, genotypes )
 
     pf.close( )
@@ -239,7 +244,7 @@ def write_related(nvariants, nsamples, nancestors, nsegments, output_prefix, maf
 
     segments = [ 0 ]
     while segments[ -1 ] < nvariants:        
-        break_length = random.expovariate( nvariants / nsegments )
+        break_length = random.expovariate( float( nvariants ) / nsegments )
         next_break = segments[ -1 ] + max( int( break_length *  nvariants ), 1 )
         if next_break >= nvariants:
             next_break = nvariants
