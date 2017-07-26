@@ -1,6 +1,7 @@
 import click
 from plinkio import plinkfile
 import random
+from math import sqrt
 
 from epigen.plink import generate, genmodels, info
 from epigen.plink.util import find_rows, sample_loci_set, find_beta0, generate_beta, compute_mafs
@@ -20,8 +21,11 @@ def epigen(plink_file, beta0, effect_h2, effect_mean, num_causal, model, link, d
     input_file = plinkfile.open( plink_file ) 
     loci = input_file.get_loci( )
     snp_indices = sample_loci_set( loci, num_causal )
-    gen_beta = generate_beta( num_causal, effect_mean, effect_h2 )
+    gen_beta = generate_beta( num_causal, effect_mean, effect_h2 / sqrt( num_causal ) )
     rows = find_rows( input_file, snp_indices )
+
+    if model == "normal" and dispersion == 1.0 and effect_h2 < 1.0:
+        dispersion = 1.0 - effect_h2
 
     if not beta0:
         beta0 = find_beta0( rows, gen_beta )
@@ -30,4 +34,4 @@ def epigen(plink_file, beta0, effect_h2, effect_mean, num_causal, model, link, d
     pheno_generator = genmodels.get_pheno_generator( model, mu_map, dispersion )
     generate.write_general_phenotype( input_file.get_samples( ), rows, pheno_generator, out, False )
     extra_info = { "truth" : list( loci[ i ].name for i in snp_indices ) }
-    info.write_info( model, mu_map, compute_mafs( rows ), dispersion, pheno_generator.sample_size, out.name + ".info", info = extra_info )
+    info.write_info( model, mu_map, compute_mafs( rows ), dispersion, pheno_generator.sample_size, out.name + ".info", info = extra_info, multiple = True )

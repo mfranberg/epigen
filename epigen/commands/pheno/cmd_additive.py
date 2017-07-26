@@ -28,4 +28,4 @@ def epigen(plink_file, beta0, beta, num_loci, model, link, dispersion, out):
     mu_map = genmodels.AdditiveMuMap( beta0, gen_beta, genmodels.get_link( model, link ) )
     pheno_generator = genmodels.get_pheno_generator( model, mu_map, dispersion )
     generate.write_general_phenotype( input_file.get_samples( ), rows, pheno_generator, out, False )
-    info.write_info( model, mu_map, compute_mafs( rows ), dispersion, pheno_generator.sample_size, plink_file + ".info" )
+    info.write_info( model, mu_map, compute_mafs( rows ), dispersion, pheno_generator.sample_size, plink_file + ".info", multiple = True )
