@@ -21,6 +21,10 @@ def epigen(plink_file, beta0, beta, num_loci, model, link, dispersion, out):
     snp_indices = sample_loci_set( loci, num_loci )
     gen_beta = generate_beta( num_loci, beta[ 0 ], beta[ 1 ] )
     rows = find_rows( input_file, snp_indices )
+    
+    with open( plink_file + ".av", "w" ) as av_file:
+        for index, b in zip( snp_indices, gen_beta ):
+            av_file.write( loci[ index ].name + " " + str( b ) + "\n" )
 
     if not beta0:
         beta0 = find_beta0( rows, gen_beta )

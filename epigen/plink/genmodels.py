@@ -160,7 +160,7 @@ class NormalPhenoGenerator:
     def generate_pheno(self, variants):
         mu = self.mu_map.map( variants )
         if mu != None:
-            self.sample_size += 1
+            self.sample_size[ 0 ] += 1
             return random.normalvariate( mu, self.dispersion )
         else:
             return None
