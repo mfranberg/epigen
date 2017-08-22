@@ -4,7 +4,7 @@ import click
 
 from epigen.commands.command import ComplexCLI
 
-@click.command(no_args_is_help = True, cmd_subdirs = ["pair", "pheno", "plink"], cls = ComplexCLI)
+@click.command(no_args_is_help = True, cmd_subdirs = ["pair", "pheno", "plink", "env"], cls = ComplexCLI)
 def epigen():
     """Generate plink or phenotype data using an epistatic model."""
 

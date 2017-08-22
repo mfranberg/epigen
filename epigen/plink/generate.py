@@ -185,6 +185,17 @@ def generate_pairs(plink_prefix):
     return
 
 ##
+# Generates environmental variables.
+#
+def write_environment(samples, nvariables, output_file):
+    output_file.write( "FID\tIID\t" + "\t".join( [ "env{0}".format( i ) for i in range( nvariables ) ] ) + "\n" )
+    for fid, iid in samples:
+        row = [ random.normalvariate( 0.0, 1.0 ) for i in range( nvariables ) ]
+        row_str = "\t".join( str( r ) for r in row )
+
+        output_file.write( "{0}\t{1}\t{2}\n".format( fid, iid, row_str ) )
+
+##
 # Generate a set of single variants.
 #
 def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = False):
@@ -197,11 +208,16 @@ def write_single(nvariants, nsamples, output_prefix, maf = None, create_pair = F
     # allele frequency distribution of EUR 1000G.
     generate_maf = lambda: random.betavariate( 0.4679562, 0.4679562 )
     if maf:
-        geneate_maf = lambda: maf[ 0 ] + ( maf[ 1 ] - maf[ 0 ] ) * random.random( )
+        generate_maf = lambda: maf[ 0 ] + ( maf[ 1 ] - maf[ 0 ] ) * random.random( )
     
     for i in range( nvariants ):
         m = generate_maf( )
         genotypes = [ variant.generate_variant( m ) for j in range( nsamples ) ]
+        actual_maf = sum( genotypes ) / ( 2.0 * nsamples )
+        if actual_maf * ( 1 - actual_maf ) <= 0.0:
+            r = random.randint( 0, nsamples - 1 )
+            genotypes[ r ] = 1 
+
         pf.write( i, genotypes )
 
     pf.close( )
@@ -222,7 +238,7 @@ def write_related(nvariants, nsamples, nancestors, nsegments, output_prefix, maf
     # allele frequency distribution of EUR 1000G.
     generate_maf = lambda: random.betavariate( 0.4679562, 0.4679562 )
     if maf:
-        geneate_maf = lambda: maf[ 0 ] + ( maf[ 1 ] - maf[ 0 ] ) * random.random( )
+        generate_maf = lambda: maf[ 0 ] + ( maf[ 1 ] - maf[ 0 ] ) * random.random( )
 
     # Generate allele frequencies
     maf = [ generate_maf( ) for i in range( nvariants ) ]
@@ -240,7 +256,7 @@ def write_related(nvariants, nsamples, nancestors, nsegments, output_prefix, maf
 
     segments = [ 0 ]
     while segments[ -1 ] < nvariants:        
-        break_length = random.expovariate( nvariants / nsegments )
+        break_length = random.expovariate( float( nvariants ) / nsegments )
         next_break = segments[ -1 ] + max( int( break_length *  nvariants ), 1 )
         if next_break >= nvariants:
             next_break = nvariants

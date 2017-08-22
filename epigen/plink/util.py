@@ -14,6 +14,49 @@ def find_rows(plink_file, loci):
     return rows
 
 ##
+# Given a list of indicies for variants, environment and gene-environment
+# interactions, construct the associated column data.
+#
+# @param plink_file An opened plink file.
+# @param env An opened environment file.
+# @param snp_indices Indices of variants.
+# @param env_indices Indices of environment.
+# @param gxe_indices Indices of gene-environment variables.
+#
+# @return A list of columns for each specified variable in three blocks:
+#         genotypes, environment, gene-environment.
+#
+def find_gxe(plink_file, env, snp_indices, env_indices, gxe_indices):
+    all_snps = set( snp_indices )
+    all_env = set( env_indices )
+
+    for g, e in gxe_indices:
+        all_snps.add( g )
+        all_env.add( e )
+
+    genotype_data = dict( )
+    for i, row in enumerate( plink_file ):
+        if i in all_snps:
+            genotype_data[ i ] = row
+
+    env_data = dict( )
+    for i, col in enumerate( env.data ):
+        if i in all_env:
+            env_data[ i ] = col
+
+    all_data = [ ]
+    for i in snp_indices:
+        all_data.append( genotype_data[ i ] )
+
+    for i in env_indices:
+        all_data.append( env_data[ i ] )
+
+    for i, j in gxe_indices:
+        all_data.append( [ g * e for g, e in zip( genotype_data[ i ], env_data[ j ] ) ] )
+
+    return all_data
+
+##
 # Returns the index of the given variant names.
 #
 # @param loci List of loci.
@@ -37,6 +80,21 @@ def sample_loci_set(loci, n):
     random.shuffle( loci_index )
 
     return loci_index[:n]
+
+##
+# Randomly selects n gene-environment interactions.
+#
+# @param loci List of loci.
+# @param env List of environmental variables.
+# @param n Number of samples to take.
+#
+# @return A list of (loci, env) indicies.
+#
+def sample_gxe(loci, env, n):
+    env_index = xrange( len( loci ) * len( env ) ) 
+    sampled_indicies = random.sample( env_index, n )
+
+    return list( map( lambda x: ( x / len( env ), x % len( env ) ), sampled_indicies ) )
 
 ##
 # Sample genotyeps from a categorical distribution.
@@ -141,9 +199,11 @@ def joint_maf(maf, ld):
 #
 def compute_maf(row):
     no_missing = filter( lambda x: x != 3, row )
-    p = sum( no_missing ) / ( 2.0 * len( no_missing ) )
-
-    return p
+    
+    if len( no_missing ) > 0:
+        return sum( no_missing ) / ( 2.0 * len( no_missing ) )
+    else:
+        return 0.0
 
 ##
 # Computes the second allele frequency for the
@@ -167,8 +227,8 @@ def compute_mafs(rows):
 # @return A beta0 that makes the probability of being a case 0.5.
 #
 def find_beta0(rows, beta):
-    maf = [ compute_maf( r ) for r in rows ]
-    beta0 = -sum( b * 2 * m for b, m in zip( beta, maf ) )
+    means = [ sum( r ) / len( r ) for r in rows ]
+    beta0 = -sum( b * m for b, m in zip( beta, means ) )
 
     return beta0
 
@@ -185,4 +245,42 @@ def find_beta0(rows, beta):
 def generate_beta(n, mean, sd):
     return [ random.normalvariate( mean, sd ) for i in range( n ) ]
 
+##
+# Compute the arithmetic mean.
+#
+# @param data List of floats.
+#
+# @return the arithmetic mean.
+#
+def mean(data):
+    n = len( data )
+    if n < 1:
+        raise ValueError( 'mean requires at least one data point' )
+    return sum(data)/n
 
+##
+# Compute the sum of square deviations.
+#
+# @param data List of floats.
+#
+# @return the sum of square deviations.
+#
+def _ss(data):
+    c = mean( data )
+    ss = sum( (x - c)**2 for x in data )
+    return ss
+
+##
+# Compute the standard deviation.
+#
+# @param data List of floats.
+#
+# @return the estimated standard deviation.
+#
+def stdev(data):
+    n = len( data )
+    if n < 2:
+        raise ValueError( 'variance requires at least two data points' )
+    ss = _ss( data )
+    pvar = ss / n
+    return pvar**0.5

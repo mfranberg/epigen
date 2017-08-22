@@ -183,16 +183,27 @@ class GeneralMuMap:
             return self.mu[ 3 * variants[ 0 ] + variants[ 1 ] ]
 
 class AdditiveMuMap:
-    def __init__(self, beta0, beta, link):
+    def __init__(self, beta0, beta, link, mu = None, std = None):
         self.beta0 = beta0
         self.beta = beta
         self.link = link
+        
+        self.mu = [0.0]*len(beta)
+        if mu:
+            self.mu = mu
+        
+        self.std = [1.0]*len(beta)
+        if std:
+            self.std = std
+            for i in range(len(self.std)):
+                if self.std[ i ] < 1e-10:
+                    self.std[ i ] = 1.0
 
     def map(self, variants):
         if 3 in variants or len( variants ) != len( self.beta ):
             return None
         else:
-            return self.link( self.beta0 + sum( v * b for v, b in zip( variants, self.beta ) ) )
+            return self.link( self.beta0 + sum( ((v-m)/s) * b for v, b, m, s in zip( variants, self.beta, self.mu, self.std ) ) )
 
 def get_pheno_generator(model, mu_map, dispersion):
     if model == "normal":

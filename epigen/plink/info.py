@@ -114,18 +114,20 @@ def estimate_heritability(model, mu_map, maf, dispersion, pop_mu):
 # @param sample_size The sample size.
 # @param output_path The output path of the json file.
 # @param info Additional parameters to write.
+# @param multiple Enable more than two snps to be causal.
 #
-def write_info(model, mu, maf, dispersion, sample_size, output_path, info = dict( )):
+def write_info(model, mu, maf, dispersion, sample_size, output_path, info = dict( ), multiple = False):
     if model == "binomial":
         info[ "case-control-ratio" ] = float( sample_size[ 0 ] ) / sum( sample_size )
 
-    if len( maf ) == 2:
-        info[ "prevalence" ] = compute_prevalence( mu, maf )
-        info[ "heritability" ] = compute_heritability( model, mu, maf, dispersion )
-    else:
-        pop_mu = estimate_prevalence( mu, maf )
-        info[ "prevalence" ] = pop_mu
-        info[ "heritability" ] = estimate_heritability( model, mu, maf, dispersion, pop_mu )
+    if maf:
+        if not multiple:
+            info[ "prevalence" ] = compute_prevalence( mu, maf )
+            info[ "heritability" ] = compute_heritability( model, mu, maf, dispersion )
+        else:
+            pop_mu = estimate_prevalence( mu, maf )
+            info[ "prevalence" ] = pop_mu
+            info[ "heritability" ] = estimate_heritability( model, mu, maf, dispersion, pop_mu )
 
     with open( output_path, "w" ) as info_file:
         json.dump( info, info_file )
