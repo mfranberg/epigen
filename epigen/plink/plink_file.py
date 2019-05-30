@@ -8,12 +8,13 @@ class PlinkFile:
     # @param phenotype Phenotypes of all individuals.
     # @param is_binary Determines whether phenotype should be interpreted
     #                  as binary or not.
+    # @param iid_prefix Prefix for iids.
     #
-    def __init__(self, path, phenotype, is_binary = True):
+    def __init__(self, path, phenotype, is_binary = True, iid_prefix = "iid"):
         samples = [ ]
         for i, p in enumerate( phenotype ):
             iid = "fid{0}".format( i )
-            fid = "iid{0}".format( i )
+            fid = "{0}{1}".format( iid_prefix, i )
 
             if is_binary:
                 sample = plinkfile.Sample( iid, fid, "0", "0", 1, p )

@@ -4,8 +4,8 @@ from .case import CaseFile
 from .model import ModelFile
 
 class OutputFiles:
-    def __init__(self, path, phenotype, is_binary = True):
-        self.plink_file = PlinkFile( path, phenotype, is_binary )
+    def __init__(self, path, phenotype, is_binary = True, iid_prefix = "iid"):
+        self.plink_file = PlinkFile( path, phenotype, is_binary, iid_prefix )
         self.pair_file = PairFile( path + ".pair" )
         self.case_file = CaseFile( path + ".case" )
         self.model_file = ModelFile( path + ".model" )

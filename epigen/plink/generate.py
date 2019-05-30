@@ -19,13 +19,14 @@ from plinkio import plinkfile
 # @param fixed_params The simulation parameters.
 # @param param_list The list of parameters to generate from.
 # @param output_prefix The output prefix, different file endings will be generated.
+# @param iid_prefix Prefix for 'iid'.
 #
-def write_general_data(model, fixed_params, param_list, output_prefix):
+def write_general_data(model, fixed_params, param_list, output_prefix, iid_prefix = "iid"):
     path, ext = os.path.splitext( output_prefix )
 
     # Number of samples must be known beforehand
     phenotype = model.generate_phenotype( fixed_params )
-    output_files = OutputFiles( path, phenotype, model.is_binary( ) )
+    output_files = OutputFiles( path, phenotype, model.is_binary( ), iid_prefix )
   
     model_index = 1
     for num_pairs, is_case, params in param_list:
