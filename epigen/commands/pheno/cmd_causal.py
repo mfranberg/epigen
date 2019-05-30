@@ -21,11 +21,16 @@ def epigen(plink_file, beta0, effect_h2, effect_mean, num_causal, model, link, d
     input_file = plinkfile.open( plink_file ) 
     loci = input_file.get_loci( )
     snp_indices = sample_loci_set( loci, num_causal )
-    gen_beta = generate_beta( num_causal, effect_mean, effect_h2 / sqrt( num_causal ) )
+    gen_beta = generate_beta( num_causal, effect_mean, sqrt( effect_h2 / num_causal ) )
     rows = find_rows( input_file, snp_indices )
 
+    causal_names = list( loci[ i ].name for i in snp_indices )
+    name_to_beta = dict( zip( causal_names, gen_beta ) )
+
+    # A bit weird to have 1.0 as default and change it here, but need
+    # to keep it as is to avoid published scripts starting to fail
     if model == "normal" and dispersion == 1.0 and effect_h2 < 1.0:
-        dispersion = 1.0 - effect_h2
+        dispersion = sqrt( 1.0 - effect_h2 )
 
     if not beta0:
         beta0 = find_beta0( rows, gen_beta )
@@ -33,5 +38,5 @@ def epigen(plink_file, beta0, effect_h2, effect_mean, num_causal, model, link, d
     mu_map = genmodels.AdditiveMuMap( beta0, gen_beta, genmodels.get_link( model, link ) )
     pheno_generator = genmodels.get_pheno_generator( model, mu_map, dispersion )
     generate.write_general_phenotype( input_file.get_samples( ), rows, pheno_generator, out, False )
-    extra_info = { "truth" : list( loci[ i ].name for i in snp_indices ) }
+    extra_info = { "truth" : list( loci[ i ].name for i in snp_indices ), "beta" : name_to_beta }
     info.write_info( model, mu_map, compute_mafs( rows ), dispersion, pheno_generator.sample_size, out.name + ".info", info = extra_info, multiple = True )

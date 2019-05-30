@@ -82,7 +82,6 @@ def generate_environment(env):
 # @param dispersion Dispersion parameter.
 # @param link The link function.
 # @param output_file The phenotypes will be written to this file.
-# @param beta0 The intercept, if not specified will be set to the overall mean.
 #
 def write_general_phenotype(sample_list, rows, pheno_generator, output_file, plink_format):
     na_string = "NA"

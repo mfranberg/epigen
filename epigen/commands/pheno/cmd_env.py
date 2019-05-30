@@ -16,8 +16,8 @@ from epigen.commands.command import CommandWithHelp
 @click.option( '--gxe-dist', type=float, nargs=2, help='Mean and variance for gene-environment interaction effects.', default = [0,0] )
 @click.option( '--lock-main', type=bool, help='Main effects are only generated for the interactions.', default = False )
 @click.option( '--num-main', type=int, help='The number of genetic main effects (if --lock-main is set this option has no effect).', default = 1 )
-@click.option( '--num-env', type=int, help='The number of environmental effects.', default = 1 )
-@click.option( '--num-gxe', type=int, help='The number of gene-environment interactions.', default = 1 )
+@click.option( '--num-env', type=int, help='The number of environmental effects.', default = 0 )
+@click.option( '--num-gxe', type=int, help='The number of gene-environment interactions.', default = 0 )
 @click.option( '--model', type=click.Choice( genmodels.get_models( ) ), help="The model to use.", required = True )
 @click.option( '--link', type=click.Choice( genmodels.get_links( ).keys( ) ), help="The link function to use.", default = "default" )
 @click.option( '--dispersion', type=float, help="The dispersion parameter to use (if none will be remaining heritability, otherwise heritability will be rescaled).", default=None )
@@ -71,5 +71,5 @@ def epigen(plink_file, env_file, beta0, main_dist, env_dist, gxe_dist, lock_main
     mu_map = genmodels.AdditiveMuMap( beta0, all_beta, genmodels.get_link( model, link ), data_means, data_stdev )
     pheno_generator = genmodels.get_pheno_generator( model, mu_map, sqrt( dispersion ) )
     generate.write_general_phenotype( genotype_file.get_samples( ), gxe_data, pheno_generator, out, False )
-    extra_info = { "truth" : truth }
+    extra_info = { "truth" : truth, "beta" : dict( zip( truth, all_beta ) ) }
     info.write_info( model, mu_map, None, dispersion, pheno_generator.sample_size, out.name + ".info", info = extra_info )
